@@ -86,3 +86,70 @@ describe('GET /api/contacts/:contactId', () => {
         expect(response.body.errors).toBeDefined();
     });
 });
+
+describe('PUT /api/contacts/:contactId', () => {
+    beforeEach(async () => {
+        await UserTest.create();
+        await ContactTest.create();
+    });
+
+    afterEach(async () => {
+        await ContactTest.deleteAll();
+        await UserTest.delete();
+    });
+
+    it('should be able update contact', async () => {
+        const contact = await ContactTest.get();
+        const response = await supertest(web)
+            .put(`/api/contacts/${contact.id}`)
+            .set('X-API-TOKEN', 'test')
+            .send({
+                first_name: 'Kautsar',
+                last_name: 'Panggawa',
+                email: 'kautsar@gmail.com',
+                phone: '08123456789',
+            });
+
+        logger.debug(response.body);
+        expect(response.status).toEqual(200);
+        expect(response.body.data.id).toEqual(contact.id);
+        expect(response.body.data.first_name).toEqual('Kautsar');
+        expect(response.body.data.last_name).toEqual('Panggawa');
+        expect(response.body.data.email).toEqual('kautsar@gmail.com');
+        expect(response.body.data.phone).toEqual('08123456789');
+    });
+
+    it('should reject update contact if request is invalid', async () => {
+        const contact = await ContactTest.get();
+        const response = await supertest(web)
+            .put(`/api/contacts/${contact.id + 1}`)
+            .set('X-API-TOKEN', 'test')
+            .send({
+                first_name: '',
+                last_name: 'Panggawa',
+                email: 'kautsar@gmail.com',
+                phone: '08123456789',
+            });
+
+        logger.debug(response.body);
+        expect(response.status).toEqual(400);
+        expect(response.body.errors).toBeDefined();
+    });
+
+    it('should reject update contact if contact is not found', async () => {
+        const contact = await ContactTest.get();
+        const response = await supertest(web)
+            .put(`/api/contacts/${contact.id + 1}`)
+            .set('X-API-TOKEN', 'test')
+            .send({
+                first_name: 'Kautsar',
+                last_name: 'Panggawa',
+                email: 'kautsar@gmail.com',
+                phone: '08123456789',
+            });
+
+        logger.debug(response.body);
+        expect(response.status).toEqual(404);
+        expect(response.body.errors).toBeDefined();
+    });
+});
