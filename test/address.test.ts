@@ -131,3 +131,82 @@ describe('GET /api/address/:contactId/:addressId', () => {
         expect(response.body.errors).toBeDefined();
     });
 });
+
+describe('PUT /api/address/:contactId/:addressId', () => {
+    beforeEach(async () => {
+        await UserTest.create();
+        await ContactTest.create();
+        await AddressTest.create();
+    });
+
+    afterEach(async () => {
+        await AddressTest.deleteAll();
+        await ContactTest.deleteAll();
+        await UserTest.delete();
+    });
+
+    it('should be able to update', async () => {
+        const contact = await ContactTest.get();
+        const address = await AddressTest.get();
+
+        const response = await supertest(web)
+            .put(`/api/contacts/${contact.id}/addresses/${address.id}`)
+            .set('X-API-TOKEN', 'test')
+            .send({
+                street: "Jl. Test Updated",
+                city: "Test Updated",
+                province: "Test Updated",
+                country: "Test Updated",
+                postal_code: "54321"
+            });
+
+        logger.debug(response.body);
+        expect(response.status).toEqual(200);
+        expect(response.body.data.id).toEqual(address.id);
+        expect(response.body.data.street).toEqual("Jl. Test Updated");
+        expect(response.body.data.city).toEqual("Test Updated");
+        expect(response.body.data.province).toEqual("Test Updated");
+        expect(response.body.data.country).toEqual("Test Updated");
+        expect(response.body.data.postal_code).toEqual("54321");
+    });
+
+    it('should reject update address if data is invalid', async () => {
+        const contact = await ContactTest.get();
+        const address = await AddressTest.get();
+
+        const response = await supertest(web)
+            .put(`/api/contacts/${contact.id}/addresses/${address.id}`)
+            .set('X-API-TOKEN', 'test')
+            .send({
+                street: "Jl. Test Updated",
+                city: "Test Updated",
+                province: "Test Updated",
+                country: "",
+                postal_code: ""
+            });
+
+        logger.debug(response.body);
+        expect(response.status).toEqual(400);
+        expect(response.body.errors).toBeDefined();
+    });
+
+    it('should reject update address if address not found', async () => {
+        const contact = await ContactTest.get();
+        const address = await AddressTest.get();
+
+        const response = await supertest(web)
+            .put(`/api/contacts/${contact.id}/addresses/${address.id + 1}`)
+            .set('X-API-TOKEN', 'test')
+            .send({
+                street: "Jl. Test Updated",
+                city: "Test Updated",
+                province: "Test Updated",
+                country: "Test Updated",
+                postal_code: "54321"
+            });
+
+        logger.debug(response.body);
+        expect(response.status).toEqual(404);
+        expect(response.body.errors).toBeDefined();
+    });
+});
